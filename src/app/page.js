@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Menu, X, Sun, Moon } from "lucide-react"; // แนะนำให้ลง lucide-react หรือใช้ SVG แทนได้
 
 const projects = [
   { title: "InventoryOS", desc: "Real-time inventory management system with WebSocket sync and multi-warehouse support.", tags: ["Next.js", "PostgreSQL", "Redis"], year: "2024", link: "#" },
@@ -29,17 +30,18 @@ export default function Portfolio() {
   const [activeSection, setActiveSection] = useState("about");
   const [visible, setVisible] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     setVisible(true);
-    // เช็ค preference ของเครื่องผู้ใช้
     if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setDarkMode(true);
+      setDarkMode(false);
     }
   }, []);
 
   const scrollTo = (id) => {
     setActiveSection(id);
+    setIsMenuOpen(false); // ปิดเมนูเมื่อคลิก (สำหรับ Mobile)
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -49,23 +51,53 @@ export default function Portfolio() {
     <main className={`min-h-screen transition-colors duration-500 font-mono ${darkMode ? "bg-[#121210] text-[#f8f7f4]" : "bg-[#f8f7f4] text-[#1a1a18]"} overflow-x-hidden`}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap');
-        body { font-family: 'DM Mono', 'Courier New', monospace; }
+        body { font-family: 'DM Mono', 'Courier New', monospace; margin: 0; }
         .font-sans-custom { font-family: 'DM Sans', sans-serif; }
         .fade-up { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
         .fade-up.visible { opacity: 1; transform: translateY(0); }
-        
-        /* Custom Colors based on Theme */
         .text-muted { color: ${darkMode ? "#888" : "#777"}; }
         .border-theme { border-color: ${darkMode ? "#2a2a26" : "#e2e0da"}; }
         .tag-bg { background-color: ${darkMode ? "#1e1e1c" : "#eeede8"}; }
+        .mobile-menu-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: ${darkMode ? "#121210" : "#f8f7f4"}; 
+            z-index: 40; transition: transform 0.3s ease-in-out;
+            transform: translateY(${isMenuOpen ? "0" : "-100%"});
+        }
       `}</style>
 
-      <div className="max-w-5xl mx-auto px-8 py-16 grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-20">
+      {/* --- Mobile Navbar --- */}
+      <nav className={`sm:hidden fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center border-b border-theme backdrop-blur-md ${darkMode ? "bg-[#121210]/80" : "bg-[#f8f7f4]/80"}`}>
+        <div className="font-sans-custom font-medium text-sm">Kan Phimook</div>
+        <div className="flex gap-4 items-center">
+          <button onClick={toggleDarkMode} className="p-1">
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+      </nav>
 
-        {/* Sidebar - Fixed/Sticky Position */}
+      {/* --- Mobile Fullscreen Menu --- */}
+      <div className="mobile-menu-overlay sm:hidden flex flex-col items-center justify-center gap-8">
+        {sections.map((s) => (
+          <button
+            key={s}
+            onClick={() => scrollTo(s)}
+            className={`text-lg uppercase tracking-widest ${activeSection === s ? "border-b-2 border-current" : "text-[#888]"}`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {/* --- Layout Wrapper --- */}
+      <div className="max-w-5xl mx-auto px-8 py-16 sm:py-24 grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-12 sm:gap-20">
+
+        {/* --- Desktop Sidebar --- */}
         <aside className="hidden sm:block">
-          <div className="fixed top-16 h-fit">
-            {/* Avatar + name */}
+          <div className="sticky top-24 h-fit">
             <div className="mb-12">
               <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-medium font-sans-custom mb-5 transition-colors duration-300 ${darkMode ? "bg-[#f8f7f4] text-[#121210]" : "bg-[#1a1a18] text-[#f8f7f4]"}`}>
                 KP
@@ -74,7 +106,6 @@ export default function Portfolio() {
               <p className="text-xs text-muted">Full-stack developer</p>
             </div>
 
-            {/* Nav */}
             <nav className="flex flex-col gap-3">
               {sections.map((s) => (
                 <button
@@ -91,13 +122,13 @@ export default function Portfolio() {
               ))}
             </nav>
 
-            {/* Theme Toggle & Status */}
             <div className="mt-12 flex flex-col gap-6">
               <button 
                 onClick={toggleDarkMode}
-                className="text-[11px] uppercase tracking-widest text-[#888] hover:text-current transition-colors text-left"
+                className="text-[11px] uppercase tracking-widest text-[#888] hover:text-current transition-colors text-left flex items-center gap-2"
               >
-                {darkMode ? "○ Light Mode" : "● Dark Mode"}
+                {darkMode ? <Sun size={12} /> : <Moon size={12} />}
+                {darkMode ? "Light Mode" : "Dark Mode"}
               </button>
 
               <div className="flex items-center gap-1.5">
@@ -108,19 +139,18 @@ export default function Portfolio() {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <div>
+        {/* --- Main Content --- */}
+        <div className="mt-12 sm:mt-0">
           {/* About */}
           <section id="about" className={`fade-up mb-24 ${visible ? "visible" : ""}`}>
             <p className="text-[11px] uppercase tracking-[0.1em] text-[#999] mb-6">About</p>
-            <h1 className={`font-sans-custom text-[clamp(2rem,5vw,3.25rem)] font-light leading-[1.15] tracking-tight mb-8 ${darkMode ? "text-white" : "text-[#1a1a18]"}`}>
-              Building things that <em className="italic font-light">work</em>,<br />
+            <h1 className={`font-sans-custom text-[clamp(1.75rem,7vw,3.25rem)] font-light leading-[1.2] tracking-tight mb-8 ${darkMode ? "text-white" : "text-[#1a1a18]"}`}>
+              Building things that <em className="italic font-light">work</em>,<br className="hidden sm:block" />
               simply and well.
             </h1>
             <p className={`font-sans-custom text-[15px] leading-[1.8] max-w-lg mb-5 ${darkMode ? "text-[#ccc]" : "text-[#555]"}`}>
               I'm a full-stack developer based in Bangkok with 5 years of experience
-              building web products — from quick prototypes to production systems
-              handling millions of requests.
+              building web products.
             </p>
           </section>
 
@@ -158,7 +188,7 @@ export default function Portfolio() {
           <section id="skills" className={`fade-up mb-24 ${visible ? "visible" : ""}`} style={{ transitionDelay: "0.2s" }}>
             <p className="text-[11px] uppercase tracking-[0.1em] text-[#999] mb-6">Skills</p>
             {skills.map((s, i) => (
-              <div key={s.group} className={`flex gap-8 py-5 border-t border-theme items-baseline ${i === skills.length - 1 ? "border-b" : ""}`}>
+              <div key={s.group} className={`flex flex-col sm:flex-row gap-2 sm:gap-8 py-5 border-t border-theme items-baseline ${i === skills.length - 1 ? "border-b" : ""}`}>
                 <span className="text-[11px] uppercase tracking-[0.08em] text-[#aaa] min-w-[80px]">{s.group}</span>
                 <div className={`font-sans-custom text-sm flex flex-wrap gap-x-6 gap-y-1 ${darkMode ? "text-[#bbb]" : "text-[#444]"}`}>
                   {s.items.map((item) => <span key={item}>{item}</span>)}
@@ -177,16 +207,15 @@ export default function Portfolio() {
                 className={`flex items-center gap-3 py-5 border-t border-theme no-underline transition-opacity duration-200 hover:opacity-50 group ${i === contacts.length - 1 ? "border-b" : ""} ${darkMode ? "text-white" : "text-[#1a1a18]"}`}
               >
                 <span className="text-[11px] uppercase tracking-[0.08em] text-[#aaa] min-w-[70px]">{c.label}</span>
-                <span className={`font-sans-custom text-sm ${darkMode ? "text-[#bbb]" : "text-[#444]"}`}>{c.value}</span>
+                <span className={`font-sans-custom text-[13px] sm:text-sm ${darkMode ? "text-[#bbb]" : "text-[#444]"}`}>{c.value}</span>
                 <span className="ml-auto text-lg transition-transform duration-200 group-hover:translate-x-1">→</span>
               </a>
             ))}
           </section>
 
-          {/* Footer */}
           <footer className="mt-20 pt-8 border-t border-theme flex justify-between items-center">
-            <span className="text-[11px] text-[#bbb] tracking-wide">© 2026 Kan Phimook</span>
-            <span className="text-[11px] text-[#bbb] tracking-wide">KPP, TH</span>
+            <span className="text-[11px] text-[#bbb] tracking-wide">© 2025 Araya Kaewmun</span>
+            <span className="text-[11px] text-[#bbb] tracking-wide">BKK, TH</span>
           </footer>
         </div>
       </div>
